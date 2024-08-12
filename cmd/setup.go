@@ -44,7 +44,7 @@ func setupSymbol() {
 	fmt.Scanln(&symbol)
 	os.Setenv("symbol", symbol)
 
-	fmt.Println("Your symbol is ", os.Getenv("symbol"), "\nBe sure to keep this symbol!")
+	fmt.Println("Your symbol is ", os.Getenv("symbol"))
 
 }
 
@@ -82,16 +82,14 @@ func registerAgent() {
 		log.Fatalf("Error reading response body: %v", err)
 	}
 
-	// Create a buffer for indented JSON
 	var out bytes.Buffer
 
-	// Indent the JSON
 	err = json.Indent(&out, responseBody, "", "    ")
 	if err != nil {
 		log.Fatalf("Error formatting JSON: %v", err)
 	}
 
 	// Print the indented JSON
-	fmt.Println(out.String())
+	fmt.Println("Be sure to keep this token safe! \n", out.String())
 
 }
