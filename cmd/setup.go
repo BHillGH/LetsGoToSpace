@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/lpernett/godotenv"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +40,7 @@ var setupCmd = &cobra.Command{
 
 func setupSymbol() {
 	var symbol string
-
+	fmt.Println(os.Getenv("symbol"))
 	fmt.Println("Enter your unique symbol:")
 	fmt.Scanln(&symbol)
 	os.Setenv("symbol", symbol)
@@ -51,12 +52,16 @@ func setupSymbol() {
 func registerAgent() {
 	url := "https://api.spacetraders.io/v2/register"
 
+	// Create body in JSON to send in request
 	body := &registerStruct{
 		Symbol:  os.Getenv("symbol"),
 		Faction: "COSMIC",
 	}
 
+	// Creating a new client
 	client := &http.Client{}
+
+	// Create the buffer and encode the body to json and create the request
 	payloadBuf := new(bytes.Buffer)
 	json.NewEncoder(payloadBuf).Encode(body)
 
@@ -66,6 +71,7 @@ func registerAgent() {
 	}
 	req.Header.Add("Content-Type", "application/json")
 
+	// Do the actual client request
 	res, err := client.Do(req)
 	if err != nil {
 		panic(err)
@@ -82,14 +88,44 @@ func registerAgent() {
 		log.Fatalf("Error reading response body: %v", err)
 	}
 
-	var out bytes.Buffer
+	// Step 2: Unmarshal JSON into the struct
+	var responseVar responseStruct
+	err = json.Unmarshal(responseBody, &responseVar)
+	if err != nil {
+		log.Fatalf("Error unmarshaling JSON: %v", err)
+	}
 
+	// Now you can access the response fields
+	fmt.Printf("Contract Type: %s\n", responseVar.Data.Token)
+
+	// Optionally, you can still pretty-print the JSON for debugging
+	var out bytes.Buffer
 	err = json.Indent(&out, responseBody, "", "    ")
 	if err != nil {
 		log.Fatalf("Error formatting JSON: %v", err)
 	}
+	fmt.Println("Be sure to keep this token safe!")
 
-	// Print the indented JSON
-	fmt.Println("Be sure to keep this token safe! \n", out.String())
+}
 
+func writeTokenToDotenv(token string) {
+	envMap := map[string]string{
+		"token": token,
+	}
+	godotenv.Write(envMap, ".env")
+
+}
+
+type responseStruct struct {
+	Data struct {
+		Token string `json:"token"`
+		Agent struct {
+			AccountID       string `json:"accountId"`
+			Symbol          string `json:"symbol"`
+			Headquarters    string `json:"headquarters"`
+			Credits         int    `json:"credits"`
+			StartingFaction string `json:"startingFaction"`
+			ShipCount       int    `json:"shipCount"`
+		} `json:"agent"`
+	} `json:"data"`
 }
